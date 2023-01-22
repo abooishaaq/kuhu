@@ -5,10 +5,7 @@ module Syntax where
 data ArithOp = Plus | Minus | Times | Divide | Remainder
     deriving (Show, Eq)
 
-data BitOp = Andb | Orb | Xor
-    deriving (Show, Eq)
-
-data BitOp1 = Shl | Shr
+data BitOp = Andb | Orb | Xor | Shl | Shr
     deriving (Show, Eq)
 
 data BoolOp = And | Or
@@ -28,7 +25,6 @@ data Expr where
     BoolOp :: BoolOp -> Expr -> Expr -> Expr
     CmpOp :: CmpOp -> Expr -> Expr -> Expr
     BitOp :: BitOp -> Expr -> Expr -> Expr
-    BitOp1 :: BitOp1 -> Expr -> Expr
     App :: String -> [Expr] -> Expr
     Let :: String -> Expr -> Expr
     Assign :: Expr -> Expr -> Expr

@@ -18,13 +18,13 @@ binary s c f = Ex.Infix (reservedOp s >> return (c f))
 table =
     [
         [ prefix "-" Negate
-        , prefix "<<" $ BitOp1 Shl
-        , prefix ">>" $ BitOp1 Shr
         ]
     ,
         [ binary "&" BitOp Andb Ex.AssocLeft
         , binary "|" BitOp Orb Ex.AssocLeft
         , binary "^" BitOp Xor Ex.AssocLeft
+        , binary ">>" BitOp Shr Ex.AssocLeft
+        , binary "<<" BitOp Shl Ex.AssocLeft
         ]
     ,
         [ binary "%" ArithOp Remainder Ex.AssocLeft
