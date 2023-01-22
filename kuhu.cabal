@@ -14,9 +14,13 @@ executable kuhu
         Lexer
         Parser
         Syntax
+        Infer
+        Type
+        Env
 
     build-depends:
           base ^>=4.14.3.0
+        , containers
         , haskeline  
         , mtl        
         , parsec

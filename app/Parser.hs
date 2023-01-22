@@ -1,8 +1,6 @@
 module Parser where
 
 import Control.Applicative (Alternative (some), optional)
-import Lexer
-import Syntax
 import Text.Parsec (ParseError, char, digit, eof, many, many1, manyTill, option, parse, sepBy, space, spaces, string, try, (<|>))
 import qualified Text.Parsec.Expr as Ex
 import Text.Parsec.String (Parser)
@@ -10,6 +8,10 @@ import Text.Parsec.Token (GenTokenParser (hexadecimal))
 import qualified Text.Parsec.Token as Tok
 import Text.Read (readMaybe)
 import Prelude hiding (seq)
+
+import Lexer
+import Syntax
+import Type
 
 prefix s c = Ex.Prefix (reservedOp s >> return c)
 
@@ -89,6 +91,19 @@ bool :: Parser Expr
 bool =
     (reserved "true" >> return (Bool True))
         <|> (reserved "false" >> return (Bool False))
+
+typee :: Parser Type
+typee =
+    (reserved "int" >> return typeInt)
+        <|> (reserved "float" >> return typeFloat)
+        <|> (reserved "bool" >> return typeBool)
+
+arrayty :: Parser Type
+arrayty = do
+    reservedOp "["
+    ty <- typee
+    reservedOp "]"
+    return (TArray ty)
 
 variable :: Parser Expr
 variable = do
@@ -186,15 +201,29 @@ forst = do
     reservedOp "}"
     return (For v ex st)
 
+args :: Parser [(String, Type)]
+args = do
+    reservedOp "("
+    args <- arg `sepBy` (spaces >> reservedOp ",")
+    reservedOp ")"
+    return args
+  where
+    arg = do
+        v <- identifier
+        reservedOp ":"
+        ty <- typee
+        return (v, ty)
+
+
 fundef :: Parser Stmt
 fundef = do
     reserved "fn"
     v <- identifier
-    args <- parens (identifier `sepBy` (spaces >> reservedOp ","))
+    ar <- args
     reservedOp "{"
     body <- many stmt
     reservedOp "}"
-    return (Fun v args body)
+    return (Fun v ar body)
 
 exprst :: Parser Stmt
 exprst = Expr <$> expr

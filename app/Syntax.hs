@@ -2,6 +2,8 @@
 
 module Syntax where
 
+import Type ( Type )
+
 data ArithOp = Plus | Minus | Times | Divide | Remainder
     deriving (Show, Eq)
 
@@ -39,7 +41,7 @@ data Stmt where
     Def :: String -> Expr -> Stmt
     If :: Expr -> [Stmt] -> [Stmt] -> Stmt
     For :: String -> Expr -> [Stmt] -> Stmt
-    Fun :: String -> [String] -> [Stmt] -> Stmt
+    Fun :: String -> [(String, Type)] -> [Stmt] -> Stmt
     deriving (Show, Eq)
 
 data TopLevel where

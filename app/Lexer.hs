@@ -9,7 +9,7 @@ import qualified Text.Parsec.Token as Tok
 lexer :: Tok.TokenParser ()
 lexer = Tok.makeTokenParser style
   where
-    ops = [";", "(", ")", "{", "}", "+", "-", "*", "/", "%", "<<", ">>", "++", "--", "&", "|", ",", ".", "=", "<", "and", "not", "or"]
+    ops = ["->", ":", ";", "(", ")", "{", "}", "+", "-", "*", "/", "%", "<<", ">>", "++", "--", "&", "|", ",", ".", "=", "<", "and", "not", "or"]
     names = ["else", "false", "fn", "if", "let", "true"]
     style =
         emptyDef
