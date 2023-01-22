@@ -26,7 +26,6 @@ data Expr where
     CmpOp :: CmpOp -> Expr -> Expr -> Expr
     BitOp :: BitOp -> Expr -> Expr -> Expr
     App :: String -> [Expr] -> Expr
-    Let :: String -> Expr -> Expr
     Assign :: Expr -> Expr -> Expr
     Array :: [Expr] -> Expr
     Index :: Expr -> Expr -> Expr
