@@ -21,13 +21,3 @@ typeInt  = TCon "Int"
 typeBool = TCon "Bool"
 typeFloat = TCon "Float"
 typeUnit = TCon "Unit"
-
-match :: Type -> Type -> Bool
-match (TVar _) _ = True
-match (TCon a) (TCon b) = a == b
-match (TArrow a b) (TArrow c d) = match a c && match b d
-match (TArray a) (TArray b) = match a b
-match _ _ = False
-
-matchsc :: Scheme -> Scheme -> Bool
-matchsc (Forall as t) (Forall bs u) = match t u && length as == length bs
