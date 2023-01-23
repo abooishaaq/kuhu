@@ -1,8 +1,9 @@
 # kuhu
-a language for scientific programming (sorta, kinda)
+a language for machine learnig (sorta, kinda)
 
 ## features
 
-- cuda/openmp backend
-- [rustish](https://github.com/rust-lang/chalk) type inference
-- better than julia :P
+- runs on gpus
+- algebraic effects
+- substructural types (maybe)
+- just parser works :P
