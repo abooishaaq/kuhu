@@ -214,18 +214,6 @@ args = do
         ty <- typee
         return (v, ty)
 
-fundef :: Parser Stmt
-fundef = do
-    reserved "fn"
-    v <- identifier
-    ar <- args
-    reservedOp "->"
-    ty <- typee
-    reservedOp "{"
-    body <- many stmt
-    reservedOp "}"
-    return (Fun v ar ty body)
-
 exprst :: Parser Stmt
 exprst = Expr <$> expr
 
@@ -246,9 +234,20 @@ stmt =
     try def
         <|> try forst
         <|> try ifthen
-        <|> try fundef
         <|> try returnst
         <|> exprst
+
+fundef :: Parser Fun
+fundef = do
+    reserved "fn"
+    v <- identifier
+    ar <- args
+    reservedOp "->"
+    ty <- typee
+    reservedOp "{"
+    body <- many stmt
+    reservedOp "}"
+    return (Fun v ar ty body)
 
 contents :: Parser a -> Parser a
 contents p = do
@@ -260,7 +259,7 @@ contents p = do
 toplevel :: Parser TopLevel
 toplevel = do
     spaces
-    (TopLevel <$> many1 stmt) <* eof
+    (TopLevel <$> many1 fundef) <* eof
 
 parseExpr :: String -> Either ParseError Expr
 parseExpr = parse (contents expr) "<stdin>"

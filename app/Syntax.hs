@@ -41,10 +41,13 @@ data Stmt where
     Def :: String -> Expr -> Stmt
     If :: Expr -> [Stmt] -> [Stmt] -> Stmt
     For :: String -> Expr -> [Stmt] -> Stmt
-    Fun :: String -> [(String, Type)] -> Type -> [Stmt] -> Stmt
     Return :: Expr -> Stmt
     deriving (Show, Eq)
 
+data Fun where
+    Fun :: String -> [(String, Type)] -> Type -> [Stmt] -> Fun
+    deriving (Show, Eq)
+
 data TopLevel where
-    TopLevel :: [Stmt] -> TopLevel
+    TopLevel :: [Fun] -> TopLevel
     deriving (Show, Eq)
