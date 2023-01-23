@@ -220,10 +220,12 @@ fundef = do
     reserved "fn"
     v <- identifier
     ar <- args
+    reservedOp "->"
+    ty <- typee
     reservedOp "{"
     body <- many stmt
     reservedOp "}"
-    return (Fun v ar body)
+    return (Fun v ar ty body)
 
 exprst :: Parser Stmt
 exprst = Expr <$> expr
