@@ -1,5 +1,5 @@
 # kuhu
-a language for machine learnig (sorta, kinda)
+a language for machine learning (sorta, kinda)
 
 ## features
 
