@@ -10,6 +10,8 @@ data Type
   | TCon !String
   | TArrow !Type !Type
   | TArray !Type
+  | TStruct1 !String
+  | TStruct2 ![(String, Type)]
   deriving (Show, Eq, Ord)
 
 data Scheme = Forall ![TVar] !Type

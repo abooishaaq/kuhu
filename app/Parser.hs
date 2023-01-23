@@ -98,7 +98,7 @@ typee =
     (reserved "int" >> return typeInt)
         <|> (reserved "float" >> return typeFloat)
         <|> (reserved "bool" >> return typeBool)
-        <|> (identifier <&> (TVar . TV))
+        <|> (identifier <&> TStruct1)
         <|> arrayty
 
 arrayty :: Parser Type
