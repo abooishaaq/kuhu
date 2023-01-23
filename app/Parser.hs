@@ -214,7 +214,6 @@ args = do
         ty <- typee
         return (v, ty)
 
-
 fundef :: Parser Stmt
 fundef = do
     reserved "fn"
@@ -237,8 +236,19 @@ def = do
     reservedOp "="
     Def v <$> expr
 
+returnst :: Parser Stmt
+returnst = do
+    reserved "return"
+    Return <$> expr
+
 stmt :: Parser Stmt
-stmt = try def <|> try forst <|> try ifthen <|> try fundef <|> exprst
+stmt =
+    try def
+        <|> try forst
+        <|> try ifthen
+        <|> try fundef
+        <|> try returnst
+        <|> exprst
 
 contents :: Parser a -> Parser a
 contents p = do
