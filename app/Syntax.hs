@@ -56,7 +56,7 @@ data Impl where
     deriving (Show, Eq)
 
 data Fun where
-    Fun :: String -> [(String, Type)] -> Type -> [Stmt] -> Fun
+    Fun :: String -> [String] -> [Type] -> Type -> [Stmt] -> Fun
     deriving (Show, Eq)
 
 data TopLevel where

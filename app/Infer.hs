@@ -62,11 +62,13 @@ instance Substitutable Type where
     apply (Subst s) t@(TVar a) = Map.findWithDefault t a s
     apply s (t1 `TArrow` t2) = apply s t1 `TArrow` apply s t2
     apply s (TArray t) = TArray $ apply s t
+    apply s (TStruct ts) = TStruct $ map (fmap (apply s)) ts
 
     ftv TCon{} = Set.empty
     ftv (TVar a) = Set.singleton a
     ftv (t1 `TArrow` t2) = ftv t1 `Set.union` ftv t2
     ftv (TArray t) = ftv t
+    ftv (TStruct ts) = ftv $ map snd ts
 
 instance Substitutable Scheme where
     apply (Subst s) (Forall as t) = Forall as $ apply s' t
@@ -92,6 +94,17 @@ data TypeError
     | UnboundVariable !String
     | Ambigious ![Constraint]
     | UnificationMismatch ![Type] ![Type]
+    | FieldNotFound !String ![String]
+    | NonStructType !Type
+
+instance Show TypeError where
+    show (UnificationFail t1 t2) = "Couldn't match expected type `" ++ show t1 ++ "` with actual type `" ++ show t2 ++ "`"
+    show (InfiniteType a t) = "Occurs check: cannot construct the infinite type `" ++ show t ++ "`"
+    show (UnboundVariable x) = "Unbound variable `" ++ x ++ "`"
+    show (Ambigious cs) = "Ambigious type variables: " ++ show cs
+    show (UnificationMismatch ts1 ts2) = "Couldn't match expected types `" ++ show ts1 ++ "` with actual types `" ++ show ts2 ++ "`"
+    show (FieldNotFound f fs) = "Field `" ++ f ++ "` not found in struct. Available fields: " ++ show fs
+    show (NonStructType t) = "Expected struct type, but got `" ++ show t ++ "`"
 
 -------------------------------------------------------------------------------
 -- Inference
@@ -158,22 +171,31 @@ generalize env t = Forall as t
     as = Set.toList $ ftv t `Set.difference` ftv env
 
 arithOps :: ArithOp -> Type
-arithOps Plus = typeInt `TArrow` (typeInt `TArrow` typeInt)
-arithOps Times = typeInt `TArrow` (typeInt `TArrow` typeInt)
-arithOps Minus = typeInt `TArrow` (typeInt `TArrow` typeInt)
-arithOps Divide = typeInt `TArrow` (typeInt `TArrow` typeInt)
-arithOps Remainder = typeInt `TArrow` (typeInt `TArrow` typeInt)
+arithOps Plus = typeNum `TArrow` (typeNum `TArrow` typeNum)
+arithOps Times = typeNum `TArrow` (typeNum `TArrow` typeNum)
+arithOps Minus = typeNum `TArrow` (typeNum `TArrow` typeNum)
+arithOps Divide = typeNum `TArrow` (typeNum `TArrow` typeNum)
+arithOps Remainder = typeNum `TArrow` (typeNum `TArrow` typeNum)
 
 boolOps :: BoolOp -> Type
 boolOps And = typeBool `TArrow` (typeBool `TArrow` typeBool)
 boolOps Or = typeBool `TArrow` (typeBool `TArrow` typeBool)
 
 bitOps :: BitOp -> Type
-bitOps Andb = typeInt `TArrow` (typeInt `TArrow` typeInt)
-bitOps Orb = typeInt `TArrow` (typeInt `TArrow` typeInt)
-bitOps Xor = typeInt `TArrow` (typeInt `TArrow` typeInt)
-bitOps Shl = typeInt `TArrow` (typeInt `TArrow` typeInt)
-bitOps Shr = typeInt `TArrow` (typeInt `TArrow` typeInt)
+bitOps Andb = typeNum `TArrow` (typeNum `TArrow` typeNum)
+bitOps Orb = typeNum `TArrow` (typeNum `TArrow` typeNum)
+bitOps Xor = typeNum `TArrow` (typeNum `TArrow` typeNum)
+bitOps Shl = typeNum `TArrow` (typeNum `TArrow` typeNum)
+bitOps Shr = typeNum `TArrow` (typeNum `TArrow` typeNum)
+
+fieldLookup :: Type -> String -> Infer Type
+fieldLookup (TStruct ts) x = case lookupf x ts of
+    Nothing -> throwError $ FieldNotFound x (map fst ts)
+    Just t -> return t
+  where
+    lookupf x [] = Nothing
+    lookupf x ((y, t) : ts) = if x == y then Just t else lookupf x ts
+fieldLookup t x = throwError $ NonStructType t
 
 -- | Infer the type of an expression
 infer :: Expr -> Infer (Type, [Constraint])
@@ -243,6 +265,28 @@ infer (Array exs) = do
     t <- fresh
     let cs = map (t,) ts
     return (TArray t, cs ++ concat css)
+infer (ArrayBuilder defex lenex) = do
+    (t1, cs1) <- infer defex
+    (t2, cs2) <- infer lenex
+    return (TArray t1, (t2, typeInt) : cs1 ++ cs2)
+infer (StructEx name fields) = do
+    (tys, css) <- unzip <$> mapM (infer . snd) fields
+    struct <- lookupEnv name
+    let structex = TStruct $ zip (map fst fields) tys
+    return (struct, (struct, structex) : concat css)
+infer (Access () ex name) = do
+    case (ex, name) of
+        (Var "self", Var f) -> do
+            struct <- lookupEnv "self"
+            field <- fieldLookup struct f
+            return (field, [])
+        (Var v, Var f) -> do
+            struct <- lookupEnv v
+            field <- fieldLookup struct f
+            return (field, [])
+        _ -> do
+            (ty, cs) <- infer ex
+            throwError $ NonStructType ty
 
 normalize :: Scheme -> Scheme
 normalize (Forall _ body) = Forall (map snd ord) (normtype body)
@@ -253,10 +297,12 @@ normalize (Forall _ body) = Forall (map snd ord) (normtype body)
     fv (TArrow a b) = fv a ++ fv b
     fv (TArray a) = fv a
     fv (TCon _) = []
+    fv (TStruct fields) = concatMap (fv . snd) fields
 
     normtype (TArray a) = TArray (normtype a)
     normtype (TArrow a b) = TArrow (normtype a) (normtype b)
     normtype (TCon a) = TCon a
+    normtype (TStruct fields) = TStruct $ zip (map fst fields) (map (normtype . snd) fields)
     normtype (TVar a) =
         case Prelude.lookup a ord of
             Just x -> TVar x
@@ -290,10 +336,15 @@ unifyMany (t1 : ts1) (t2 : ts2) =
 unifyMany t1 t2 = throwError $ UnificationMismatch t1 t2
 
 unifies :: Type -> Type -> Solve Subst
-unifies t1 t2 | t1 == t2 = return emptySubst
+unifies t1 t2 | subtype t1 t2 = return emptySubst
 unifies (TVar v) t = v `bind` t
 unifies t (TVar v) = v `bind` t
 unifies (TArrow t1 t2) (TArrow t3 t4) = unifyMany [t1, t2] [t3, t4]
+unifies (TArray t1) (TArray t2) = unifies t1 t2
+unifies (TStruct fs1) (TStruct fs2) =
+    if map fst fs1 == map fst fs2
+        then unifyMany (map snd fs1) (map snd fs2)
+        else throwError $ UnificationMismatch [TStruct fs1] [TStruct fs2]
 unifies t1 t2 = throwError $ UnificationFail t1 t2
 
 -- Unification solver

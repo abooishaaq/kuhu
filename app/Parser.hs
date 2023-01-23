@@ -106,7 +106,7 @@ typee =
         <|> (reserved "float" >> return typeFloat)
         <|> (reserved "bool" >> return typeBool)
         <|> (reserved "unit" >> return typeUnit)
-        <|> (identifier <&> TStruct1)
+        <|> (TVar . TV . ("_" ++) <$> identifier)
         <|> arrayty
 
 arrayty :: Parser Type
@@ -276,7 +276,7 @@ fundef = do
     reservedOp "{"
     body <- many stmt
     reservedOp "}"
-    return (Fun v ar ty body)
+    return (Fun v (map fst ar) (map snd ar) ty body)
 
 funtop :: Parser TopLevel
 funtop = TopLevelFun <$> fundef
