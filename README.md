@@ -7,3 +7,17 @@ a language for machine learning (sorta, kinda)
 - algebraic effects
 - substructural types (maybe)
 - just parser works :P
+
+## roadmap
+
+- basics
+    - [x] parser
+    - [ ] semantic analysis
+    - [ ] codegen
+    - [ ] ability to write a neural network
+- what cool kids are doing
+    - [ ] substructural types
+    - [ ] algebraic effects
+- gpu support
+    - [ ] cuda
+    - [ ] opencl
