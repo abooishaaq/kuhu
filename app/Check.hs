@@ -2,8 +2,6 @@
 
 module Check where
 
-import Prelude hiding (lookup)
-
 import Env
 import Infer
 import Syntax
