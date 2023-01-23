@@ -44,10 +44,22 @@ data Stmt where
     Return :: Expr -> Stmt
     deriving (Show, Eq)
 
+data Struct where
+    Struct :: String -> [(String, Type)] -> Struct
+    deriving (Show, Eq)
+
+data Impl where
+    Impl :: String -> [Fun] -> Impl
+    deriving (Show, Eq)
+
 data Fun where
     Fun :: String -> [(String, Type)] -> Type -> [Stmt] -> Fun
     deriving (Show, Eq)
 
 data TopLevel where
-    TopLevel :: [Fun] -> TopLevel
+    TopLevelStruct :: Struct -> TopLevel
+    TopLevelImpl :: Impl -> TopLevel
+    TopLevelFun :: Fun -> TopLevel
     deriving (Show, Eq)
+
+type Program = [TopLevel]

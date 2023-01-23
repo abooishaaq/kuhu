@@ -12,6 +12,7 @@ import Prelude hiding (seq)
 import Lexer
 import Syntax
 import Type
+import Data.Functor ((<&>))
 
 prefix s c = Ex.Prefix (reservedOp s >> return c)
 
@@ -203,10 +204,7 @@ forst = do
 
 args :: Parser [(String, Type)]
 args = do
-    reservedOp "("
-    args <- arg `sepBy` (spaces >> reservedOp ",")
-    reservedOp ")"
-    return args
+    arg `sepBy` (spaces >> reservedOp ",")
   where
     arg = do
         v <- identifier
@@ -241,13 +239,34 @@ fundef :: Parser Fun
 fundef = do
     reserved "fn"
     v <- identifier
-    ar <- args
+    ar <- parens args
     reservedOp "->"
     ty <- typee
     reservedOp "{"
     body <- many stmt
     reservedOp "}"
     return (Fun v ar ty body)
+
+funtop :: Parser TopLevel
+funtop = TopLevelFun <$> fundef
+
+struct :: Parser TopLevel
+struct = do
+    reserved "struct"
+    v <- identifier
+    reservedOp "{"
+    ar <- args
+    reservedOp "}"
+    return (TopLevelStruct (Struct v ar))
+
+impl :: Parser TopLevel
+impl = do
+    reserved "impl"
+    v <- identifier
+    reservedOp "{"
+    body <- many fundef
+    reservedOp "}"
+    return (TopLevelImpl (Impl v body))
 
 contents :: Parser a -> Parser a
 contents p = do
@@ -256,13 +275,11 @@ contents p = do
     eof
     return r
 
-toplevel :: Parser TopLevel
-toplevel = do
-    spaces
-    (TopLevel <$> many1 fundef) <* eof
+toplevel :: Parser [TopLevel]
+toplevel = many1 (try struct <|> try impl <|> funtop)
 
 parseExpr :: String -> Either ParseError Expr
 parseExpr = parse (contents expr) "<stdin>"
 
-parseToplevel :: String -> Either ParseError TopLevel
+parseToplevel :: String -> Either ParseError Program
 parseToplevel = parse (contents toplevel) "<stdin>"
