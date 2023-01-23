@@ -27,11 +27,14 @@ data Expr where
     BoolOp :: BoolOp -> Expr -> Expr -> Expr
     CmpOp :: CmpOp -> Expr -> Expr -> Expr
     BitOp :: BitOp -> Expr -> Expr -> Expr
-    App :: String -> [Expr] -> Expr
+    App :: Expr -> [Expr] -> Expr
     Assign :: Expr -> Expr -> Expr
+    ArrayBuilder :: Expr -> Expr -> Expr
     Array :: [Expr] -> Expr
     Index :: Expr -> Expr -> Expr
     Range :: Expr -> Expr -> Expr
+    StructEx :: String -> [(String, Expr)] -> Expr
+    Access :: () -> Expr -> Expr -> Expr
     Incr :: Expr -> Expr
     Decr :: Expr -> Expr
     deriving (Show, Eq)

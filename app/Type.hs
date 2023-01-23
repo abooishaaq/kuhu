@@ -20,6 +20,7 @@ data Scheme = Forall ![TVar] !Type
 typeInt  = TCon "Int"
 typeBool = TCon "Bool"
 typeFloat = TCon "Float"
+typeUnit = TCon "Unit"
 
 match :: Type -> Type -> Bool
 match (TVar _) _ = True

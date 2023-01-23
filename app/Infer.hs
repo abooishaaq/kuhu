@@ -216,11 +216,12 @@ infer (BitOp op e1 e2) = do
     return (t, (u1, u2) : cs1 ++ cs2)
 infer (App var args) = do
     env <- ask
-    t <- lookupEnv var
-    (ts, css) <- unzip <$> mapM infer args
-    t' <- fresh
-    let u = foldr TArrow t' ts
-    return (t', (t, u) : concat css)
+    (fnty, cs1) <- infer var
+    (argtys, cs2) <- unzip <$> mapM infer args
+    retty <- fresh
+    let u1 = foldr TArrow retty argtys
+        u2 = fnty
+    return (retty, (u1, u2) : cs1 ++ concat cs2)
 infer CmpOp{} = return (typeBool, [])
 infer (Index ex1 ex2) = do
     (t1, cs1) <- infer ex1

@@ -1,6 +1,7 @@
 module Parser where
 
 import Control.Applicative (Alternative (some), optional)
+import Data.Functor ((<&>))
 import Text.Parsec (ParseError, char, digit, eof, many, many1, manyTill, option, parse, sepBy, space, spaces, string, try, (<|>))
 import qualified Text.Parsec.Expr as Ex
 import Text.Parsec.String (Parser)
@@ -12,7 +13,6 @@ import Prelude hiding (seq)
 import Lexer
 import Syntax
 import Type
-import Data.Functor ((<&>))
 
 prefix s c = Ex.Prefix (reservedOp s >> return c)
 
@@ -20,7 +20,14 @@ binary s c f = Ex.Infix (reservedOp s >> return (c f))
 
 table =
     [
+        [ binary "." Access () Ex.AssocLeft
+        ]
+    ,
         [ prefix "-" Negate
+        ]
+    ,
+        [ prefix "++" Incr
+        , prefix "--" Decr
         ]
     ,
         [ binary "&" BitOp Andb Ex.AssocLeft
@@ -98,6 +105,7 @@ typee =
     (reserved "int" >> return typeInt)
         <|> (reserved "float" >> return typeFloat)
         <|> (reserved "bool" >> return typeBool)
+        <|> (reserved "unit" >> return typeUnit)
         <|> (identifier <&> TStruct1)
         <|> arrayty
 
@@ -110,7 +118,35 @@ arrayty = do
 
 variable :: Parser Expr
 variable = do
-    Var <$> identifier
+    v <- identifier
+    let index = do
+            reservedOp "["
+            i <- expr
+            reservedOp "]"
+            return i
+    indices <- many index
+    case indices of
+        [] -> return (Var v)
+        _ -> return $ foldl Index (Var v) indices
+
+field :: Parser (String, Expr)
+field = do
+    name <- optional $ identifier <* reservedOp ":"
+    val <- expr
+    case name of
+        Just n -> return (n, val)
+        Nothing ->
+            case val of
+                Var n -> return (n, val)
+                _ -> fail "Invalid field"
+
+structex :: Parser Expr
+structex = do
+    name <- identifier
+    reservedOp "{"
+    fields <- field `sepBy` reservedOp ","
+    reservedOp "}"
+    return (StructEx name fields)
 
 nonapp :: Parser Expr
 nonapp = do
@@ -123,7 +159,7 @@ nonapp = do
 
 app :: Parser Expr
 app = do
-    f <- identifier
+    f <- term
     args <- parens (expr `sepBy` (spaces >> reservedOp ","))
     return (App f args)
 
@@ -133,6 +169,15 @@ array = do
     row <- expr `sepBy` spaces
     reservedOp "]"
     return (Array row)
+
+arraybuilder :: Parser Expr
+arraybuilder = do
+    reservedOp "["
+    def <- expr
+    reservedOp ";"
+    len <- expr
+    reservedOp "]"
+    return (ArrayBuilder def len)
 
 term = Ex.buildExpressionParser table nonapp
 
@@ -146,36 +191,20 @@ range = do
     reservedOp ".."
     Range ex1 <$> aexp
 
-index :: Parser Expr
-index = do
-    ex1 <- aexp
-    ex2 <- optional $ do
-        reservedOp "["
-        ex2 <- range <|> aexp
-        reservedOp "]"
-        return ex2
-    case ex2 of
-        Just ex2 -> return (Index ex1 ex2)
-        Nothing -> return ex1
-
 assign :: Parser Expr
 assign = do
-    v <- index
+    v <- variable
     reservedOp "="
     Assign v <$> expr
 
-incr :: Parser Expr
-incr = do
-    reservedOp "++"
-    Incr <$> index
-
-decr :: Parser Expr
-decr = do
-    reservedOp "--"
-    Decr <$> index
-
 expr :: Parser Expr
-expr = try assign <|> try incr <|> try decr <|> try range <|> try index <|> array
+expr =
+    try structex
+        <|> try range
+        <|> try arraybuilder
+        <|> try assign
+        <|> try array
+        <|> aexp
 
 ifthen :: Parser Stmt
 ifthen = do

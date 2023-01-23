@@ -1,8 +1,32 @@
+struct Matrix {
+    rows: int,
+    cols: int,
+    data: [float]
+}
+
+impl Matrix {
+    fn new(rows: int, cols: int, default: float) -> Matrix {
+        return Matrix {
+            rows: rows,
+            cols: rows,
+            data: [default; rows * cols]
+        }
+    }
+
+    fn get(row: int, col: int) -> float {
+        return data[row * self.cols + col]
+    }
+
+    fn set(row: int, col: int, value: float) -> int {
+        data[row * self.cols + col] = value
+    }
+}
+
 fn add(a: int, b: int) -> int {
     return a + b
 }
 
-fn main() {
+fn main() -> int {
     let matrix = [
         [1. 2. 3.]
         [4. 5. 6.]
@@ -11,4 +35,9 @@ fn main() {
     for row in matrix {
         map(row, add, 1.)
     }
+    let mat_ = Matrix.new(3, 3, 0.)
+    for row in mat {
+        ++row
+    }
+
 }
