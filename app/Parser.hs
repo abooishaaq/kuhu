@@ -98,6 +98,8 @@ typee =
     (reserved "int" >> return typeInt)
         <|> (reserved "float" >> return typeFloat)
         <|> (reserved "bool" >> return typeBool)
+        <|> (identifier <&> (TVar . TV))
+        <|> arrayty
 
 arrayty :: Parser Type
 arrayty = do
