@@ -5,7 +5,7 @@ version:            0.1.0.0
 author:             Malik Ammar Faisal
 maintainer:         binfaisal.ammar@gmail.com
 
-extra-source-files: CHANGELOG.md
+
 
 executable kuhu
     main-is:          Main.hs
@@ -14,10 +14,8 @@ executable kuhu
         Lexer
         Parser
         Syntax
-        Infer
         Type
         Env
-        Check
 
     build-depends:
           base ^>=4.14.3.0
